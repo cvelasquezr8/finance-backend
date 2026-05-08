@@ -1,0 +1,69 @@
+{
+  "errors": {
+    "ENTITY_NOT_FOUND": "{{entity}} no encontrado",
+    "DUPLICATE_ENTITY": "Ya existe un {{entity}} con ese {{field}}",
+    "BUSINESS_RULE_VIOLATION": "Regla de negocio violada: {{message}}",
+    "UNAUTHORIZED": "No autorizado. Por favor inicia sesión nuevamente.",
+    "FORBIDDEN": "No tienes permisos para realizar esta acción.",
+    "VALIDATION": "Error de validación: {{details}}",
+    "INTERNAL_SERVER_ERROR": "Ocurrió un error inesperado. Por favor intenta más tarde.",
+    "INVALID_CREDENTIALS": "Correo o contraseña incorrectos.",
+    "INACTIVE_ACCOUNT": "Tu cuenta está inactiva o bloqueada.",
+    "INVALID_TOKEN": "Token inválido o expirado.",
+    "RATE_LIMIT": "Demasiadas solicitudes. Por favor espera antes de intentar nuevamente.",
+    "FILE_NOT_FOUND": "Archivo no encontrado.",
+    "FILE_ACCESS_DENIED": "El token de acceso al archivo es inválido o ha expirado."
+  },
+  "validation": {
+    "email_invalid": "Por favor ingresa un correo electrónico válido.",
+    "password_min": "La contraseña debe tener al menos 6 caracteres.",
+    "alias_format": "El alias debe seguir el formato @alias (2-20 caracteres en minúsculas).",
+    "min_chars": "Debe tener al menos {{min}} caracteres.",
+    "positive_number": "Debe ser un número positivo.",
+    "last_four_digits": "Deben ser exactamente 4 dígitos.",
+    "date_string": "Debe ser una fecha válida (YYYY-MM-DD).",
+    "integer_range": "Debe ser un entero entre {{min}} y {{max}}.",
+    "required": "Este campo es requerido."
+  },
+  "auth": {
+    "login_success": "Inicio de sesión exitoso.",
+    "register_success": "Cuenta creada exitosamente.",
+    "logout_success": "Has cerrado sesión exitosamente."
+  },
+  "transaction": {
+    "created": "Transacción creada exitosamente.",
+    "updated": "Transacción actualizada exitosamente.",
+    "deleted": "Transacción eliminada exitosamente.",
+    "confirmed": "Transacción confirmada.",
+    "reverted": "Transacción revertida a pendiente.",
+    "receipt_uploaded": "Comprobante subido exitosamente.",
+    "not_found": "Transacción no encontrada.",
+    "access_denied": "No tienes acceso a esta transacción."
+  },
+  "balance": {
+    "adjusted": "Balance ajustado exitosamente.",
+    "income_added": "Ingreso registrado exitosamente."
+  },
+  "card": {
+    "created": "Tarjeta agregada exitosamente.",
+    "updated": "Tarjeta actualizada exitosamente.",
+    "deleted": "Tarjeta eliminada exitosamente.",
+    "not_found": "Tarjeta no encontrada.",
+    "access_denied": "No tienes acceso a esta tarjeta."
+  },
+  "event": {
+    "created": "Evento creado exitosamente.",
+    "cancelled": "Evento cancelado.",
+    "invite_sent": "Invitación enviada exitosamente.",
+    "responded": "Respuesta a la invitación registrada.",
+    "item_added": "Artículo de compra agregado.",
+    "item_toggled": "Estado del artículo actualizado.",
+    "not_found": "Evento no encontrado.",
+    "only_creator": "Solo el creador del evento puede realizar esta acción."
+  },
+  "admin": {
+    "role_updated": "Rol de usuario actualizado.",
+    "status_updated": "Estado de usuario actualizado.",
+    "user_not_found": "Usuario no encontrado."
+  }
+}

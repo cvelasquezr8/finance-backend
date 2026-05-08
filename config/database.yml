@@ -1,0 +1,8 @@
+database:
+  url: ${DATABASE_URL:mysql://root:root@localhost:3306/finance_db}
+
+jwt:
+  accessSecret: ${JWT_ACCESS_SECRET:change-me-in-production}
+  refreshSecret: ${JWT_REFRESH_SECRET:change-me-in-production}
+  accessExpiresIn: ${JWT_ACCESS_EXPIRES_IN:15m}
+  refreshExpiresIn: ${JWT_REFRESH_EXPIRES_IN:7d}

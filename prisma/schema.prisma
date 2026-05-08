@@ -1,0 +1,280 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  active
+  blocked
+  deleted
+}
+
+enum TransactionType {
+  scheduled
+  daily
+  income
+  adjustment
+}
+
+enum TransactionCategory {
+  vivienda
+  servicios
+  alimentacion
+  transporte
+  salud
+  entretenimiento
+  educacion
+  deuda
+  otros
+}
+
+enum TransactionStatus {
+  pending
+  confirmed
+  cancelled
+}
+
+enum QuincenaType {
+  primera
+  segunda
+}
+
+enum CardType {
+  CREDIT
+  DEBIT
+}
+
+enum EventStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ParticipantStatus {
+  PENDING_CONFIRMATION
+  CONFIRMED
+  DECLINED
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id             String     @id @default(uuid())
+  email          String     @unique
+  passwordHash   String
+  firstName      String
+  lastName       String
+  middleName     String?
+  secondLastName String?
+  phone          String?
+  alias          String     @unique
+  currency       String     @default("MXN")
+  timezone       String     @default("America/Mexico_City")
+  language       String     @default("es")
+  theme          String     @default("dark")
+  avatarUrl      String?
+  monthlyNotifications Boolean @default(true)
+  role           UserRole   @default(USER)
+  status         UserStatus @default(active)
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime?
+  createdLocalTimeAt   DateTime?
+  updatedLocalTimeAt   DateTime?
+  deletedLocalTimeAt   DateTime?
+
+  transactions         Transaction[]
+  cards                Card[]
+  refreshTokens        RefreshToken[]
+  eventParticipants    EventParticipant[]
+  createdEvents        BudgetEvent[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique @db.VarChar(512)
+  userId    String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Transaction {
+  id          String              @id @default(uuid())
+  userId      String
+  description String
+  amount      Decimal             @db.Decimal(12, 2)
+  type        TransactionType
+  category    TransactionCategory
+  status      TransactionStatus   @default(pending)
+  quincena    QuincenaType
+  dueDay      Int
+  month       Int
+  year        Int
+  isRecurring Boolean             @default(false)
+  isCC        Boolean             @default(false)
+  cardId      String?
+  eventId     String?
+  receiptUrl  String?
+  confirmedAt DateTime?
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime?
+  createdLocalTimeAt   DateTime?
+  updatedLocalTimeAt   DateTime?
+  deletedLocalTimeAt   DateTime?
+
+  user        User          @relation(fields: [userId], references: [id])
+  card        Card?         @relation(fields: [cardId], references: [id])
+  event       BudgetEvent?  @relation(fields: [eventId], references: [id])
+
+  @@index([userId, month, year, quincena])
+  @@index([userId, year])
+  @@map("transactions")
+}
+
+model Card {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  lastFour  String   @db.Char(4)
+  type      CardType
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime?
+  createdLocalTimeAt   DateTime?
+  updatedLocalTimeAt   DateTime?
+  deletedLocalTimeAt   DateTime?
+
+  user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+
+  @@map("cards")
+}
+
+model BudgetEvent {
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+  goalAmount  Decimal     @db.Decimal(12, 2)
+  deadline    DateTime?
+  createdBy   String
+  status      EventStatus @default(ACTIVE)
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime?
+  createdLocalTimeAt   DateTime?
+  updatedLocalTimeAt   DateTime?
+  deletedLocalTimeAt   DateTime?
+
+  creator       User               @relation(fields: [createdBy], references: [id])
+  participants  EventParticipant[]
+  shoppingItems ShoppingItem[]
+  transactions  Transaction[]
+
+  @@map("budget_events")
+}
+
+model EventParticipant {
+  id          String            @id @default(uuid())
+  eventId     String
+  userId      String
+  alias       String
+  assignedPct Decimal           @db.Decimal(5, 2)
+  status      ParticipantStatus @default(PENDING_CONFIRMATION)
+  joinedAt    DateTime          @default(now())
+  respondedAt DateTime?
+
+  event BudgetEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User        @relation(fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+  @@map("event_participants")
+}
+
+model ShoppingItem {
+  id            String   @id @default(uuid())
+  eventId       String
+  name          String
+  estimatedCost Decimal? @db.Decimal(12, 2)
+  bought        Boolean  @default(false)
+  assignedTo    String?
+  boughtBy      String?
+  boughtAt      DateTime?
+
+  createdAt DateTime @default(now())
+
+  event BudgetEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("shopping_items")
+}
+
+// Tabla de idempotencia para evitar duplicidad en operaciones financieras
+model IdempotencyKey {
+  id         String   @id @default(uuid())
+  key        String   @unique
+  userId     String
+  endpoint   String
+  statusCode Int
+  response   Json
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+
+  @@index([key])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
+}
+
+// Tabla de logs de errores críticos persistidos
+model ErrorLog {
+  id          String   @id @default(uuid())
+  level       String
+  message     String   @db.Text
+  context     String?
+  userId      String?
+  ip          String?
+  path        String?
+  method      String?
+  stack       String?  @db.Text
+  requestBody Json?
+  createdAt   DateTime @default(now())
+
+  @@index([level, createdAt])
+  @@map("error_logs")
+}
+
+// Historial de ajustes de balance
+model BalanceAdjustment {
+  id             String   @id @default(uuid())
+  userId         String
+  previousBalance Decimal @db.Decimal(12, 2)
+  newBalance     Decimal  @db.Decimal(12, 2)
+  reason         String
+  adjustmentDate DateTime
+
+  createdAt          DateTime @default(now())
+  createdLocalTimeAt DateTime?
+
+  @@map("balance_adjustments")
+}

@@ -1,0 +1,17 @@
+app:
+  name: finance-backend
+  port: ${PORT:3000}
+  prefix: ${API_PREFIX:api/v1}
+  environment: ${NODE_ENV:development}
+
+cors:
+  origins:
+    - ${CORS_ORIGINS:http://localhost:5173}
+
+throttle:
+  ttl: ${THROTTLE_TTL_MS:60000}
+  limit: ${THROTTLE_LIMIT:100}
+
+storage:
+  dest: ${UPLOAD_DEST:./uploads}
+  maxFileSizeMb: ${MAX_FILE_SIZE_MB:5}

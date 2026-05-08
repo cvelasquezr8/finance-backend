@@ -1,0 +1,69 @@
+{
+  "errors": {
+    "ENTITY_NOT_FOUND": "{{entity}} not found",
+    "DUPLICATE_ENTITY": "{{entity}} already exists with that {{field}}",
+    "BUSINESS_RULE_VIOLATION": "Business rule violation: {{message}}",
+    "UNAUTHORIZED": "Unauthorized. Please log in again.",
+    "FORBIDDEN": "You do not have permission to perform this action.",
+    "VALIDATION": "Validation failed: {{details}}",
+    "INTERNAL_SERVER_ERROR": "An unexpected error occurred. Please try again later.",
+    "INVALID_CREDENTIALS": "Invalid email or password.",
+    "INACTIVE_ACCOUNT": "Your account is inactive or blocked.",
+    "INVALID_TOKEN": "Invalid or expired token.",
+    "RATE_LIMIT": "Too many requests. Please wait before trying again.",
+    "FILE_NOT_FOUND": "File not found.",
+    "FILE_ACCESS_DENIED": "File access token is invalid or expired."
+  },
+  "validation": {
+    "email_invalid": "Please enter a valid email address.",
+    "password_min": "Password must be at least 6 characters long.",
+    "alias_format": "Alias must follow the @alias format (2-20 lowercase characters).",
+    "min_chars": "Must be at least {{min}} characters.",
+    "positive_number": "Must be a positive number.",
+    "last_four_digits": "Must be exactly 4 digits.",
+    "date_string": "Must be a valid date string (YYYY-MM-DD).",
+    "integer_range": "Must be an integer between {{min}} and {{max}}.",
+    "required": "This field is required."
+  },
+  "auth": {
+    "login_success": "Login successful.",
+    "register_success": "Account created successfully.",
+    "logout_success": "You have been logged out successfully."
+  },
+  "transaction": {
+    "created": "Transaction created successfully.",
+    "updated": "Transaction updated successfully.",
+    "deleted": "Transaction deleted successfully.",
+    "confirmed": "Transaction confirmed.",
+    "reverted": "Transaction reverted to pending.",
+    "receipt_uploaded": "Receipt uploaded successfully.",
+    "not_found": "Transaction not found.",
+    "access_denied": "You do not have access to this transaction."
+  },
+  "balance": {
+    "adjusted": "Balance adjusted successfully.",
+    "income_added": "Income recorded successfully."
+  },
+  "card": {
+    "created": "Card added successfully.",
+    "updated": "Card updated successfully.",
+    "deleted": "Card removed successfully.",
+    "not_found": "Card not found.",
+    "access_denied": "You do not have access to this card."
+  },
+  "event": {
+    "created": "Event created successfully.",
+    "cancelled": "Event cancelled.",
+    "invite_sent": "Invitation sent successfully.",
+    "responded": "Invitation response recorded.",
+    "item_added": "Shopping item added.",
+    "item_toggled": "Item status updated.",
+    "not_found": "Event not found.",
+    "only_creator": "Only the event creator can perform this action."
+  },
+  "admin": {
+    "role_updated": "User role updated.",
+    "status_updated": "User status updated.",
+    "user_not_found": "User not found."
+  }
+}
