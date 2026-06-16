@@ -80,7 +80,7 @@ export class EventController {
 
   @Get(':eventId/transactions')
   @ApiOperation({ summary: 'Transactions linked to event' })
-  getTransactions(@Param('eventId') _eventId: string) {
-    return []
+  getTransactions(@Param('eventId') eventId: string) {
+    return this.eventService.getLinkedTransactions(eventId)
   }
 }

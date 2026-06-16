@@ -8,8 +8,27 @@ import { UpdateTransactionDto } from '@interface/http/transaction/dto/update-tra
 export class TransactionService {
   constructor(private readonly txRepo: TransactionRepository) {}
 
-  async list(userId: string, month: number, year: number, quincena?: string) {
-    const txs = await this.txRepo.findByFilter({ userId, month, year, quincena })
+  async list(
+    userId: string,
+    month: number,
+    year: number,
+    quincena?: string,
+    type?: string,
+    cardId?: string
+  ) {
+    // The frontend uses cardId='cc-only' as a virtual filter for credit-card items.
+    const isCC = cardId === 'cc-only' ? true : undefined
+    const realCardId = cardId && cardId !== 'cc-only' ? cardId : undefined
+    const normalizedType = type && type !== 'all' ? type : undefined
+    const txs = await this.txRepo.findByFilter({
+      userId,
+      month,
+      year,
+      quincena,
+      type: normalizedType,
+      cardId: realCardId,
+      isCC,
+    })
     return {
       data: txs.map(TransactionService.toDto),
       total: txs.length,
@@ -113,6 +132,7 @@ export class TransactionService {
       isCC: tx.isCC,
       cardId: tx.cardId ?? null,
       eventId: tx.eventId ?? null,
+      userId: tx.userId ?? null,
       receiptUrl: tx.receiptUrl ?? null,
       confirmedAt: tx.confirmedAt?.toISOString() ?? null,
       createdAt: tx.createdAt.toISOString(),

@@ -7,6 +7,7 @@ import { UserRepository } from '@domain/repositories'
 import { DuplicateEntityException } from '@domain/exceptions'
 import { PrismaService } from '@infrastructure/database'
 import { AuthResponsePayload } from './login.use-case'
+import { toUserDto } from '@application/user/user.mapper'
 
 export interface RegisterInput {
   firstName: string
@@ -56,6 +57,9 @@ export class RegisterUseCase {
       monthlyNotifications: true,
       role: 'USER',
       status: 'active',
+      mustChangePassword: false,
+      invitedBy: null,
+      invitedAt: null,
       deletedAt: null,
       createdLocalTimeAt: null,
       updatedLocalTimeAt: null,
@@ -65,13 +69,13 @@ export class RegisterUseCase {
     const payload = { sub: user.id, email: user.email, role: user.role, lang: user.language }
 
     const token = this.jwtService.sign(payload, {
-      secret: this.config.get<string>('database.jwt.accessSecret'),
-      expiresIn: (this.config.get<string>('database.jwt.accessExpiresIn') ?? '15m') as any,
+      secret: this.config.get<string>('JWT_ACCESS_SECRET'),
+      expiresIn: (this.config.get<string>('JWT_ACCESS_EXPIRES_IN') ?? '15m') as any,
     })
 
     const refreshToken = this.jwtService.sign(payload, {
-      secret: this.config.get<string>('database.jwt.refreshSecret'),
-      expiresIn: (this.config.get<string>('database.jwt.refreshExpiresIn') ?? '7d') as any,
+      secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: (this.config.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '7d') as any,
     })
 
     await (this.prisma as any).refreshToken.create({
@@ -82,26 +86,7 @@ export class RegisterUseCase {
       token,
       refreshToken,
       expiresIn: 900,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: `${user.firstName} ${user.lastName}`,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        middleName: user.middleName,
-        secondLastName: user.secondLastName,
-        phone: user.phone,
-        currency: user.currency,
-        timezone: user.timezone,
-        monthlyNotifications: user.monthlyNotifications,
-        role: user.role,
-        status: user.status,
-        alias: user.alias,
-        avatarUrl: user.avatarUrl,
-        language: user.language,
-        theme: user.theme,
-        createdAt: user.createdAt.toISOString(),
-      },
+      user: toUserDto(user),
     }
   }
 }

@@ -19,6 +19,9 @@ export interface UserEntity {
   monthlyNotifications: boolean
   role: UserRole
   status: UserStatus
+  mustChangePassword: boolean
+  invitedBy?: string | null
+  invitedAt?: Date | null
   createdAt: Date
   updatedAt: Date
   deletedAt?: Date | null

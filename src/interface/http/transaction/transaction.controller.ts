@@ -36,9 +36,11 @@ export class TransactionController {
     @CurrentUser() user: UserEntity,
     @Query('month') month: string,
     @Query('year') year: string,
-    @Query('quincena') quincena?: string
+    @Query('quincena') quincena?: string,
+    @Query('type') type?: string,
+    @Query('cardId') cardId?: string
   ) {
-    return this.txService.list(user.id, Number(month), Number(year), quincena)
+    return this.txService.list(user.id, Number(month), Number(year), quincena, type, cardId)
   }
 
   @Post()

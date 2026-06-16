@@ -67,6 +67,14 @@ enum ParticipantStatus {
   DECLINED
 }
 
+enum NotificationType {
+  event_invitation
+  invitation_response
+  account_invited
+  account_blocked
+  monthly_summary
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -88,6 +96,12 @@ model User {
   role           UserRole   @default(USER)
   status         UserStatus @default(active)
 
+  // Invitation flow: a user invited by an admin logs in with a temp password and
+  // is forced to change it before doing anything else.
+  mustChangePassword Boolean  @default(false)
+  invitedBy          String?
+  invitedAt          DateTime?
+
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   deletedAt            DateTime?
@@ -100,8 +114,26 @@ model User {
   refreshTokens        RefreshToken[]
   eventParticipants    EventParticipant[]
   createdEvents        BudgetEvent[]
+  notifications        Notification[]
 
   @@map("users")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String?          @db.Text
+  relatedId String?
+  read      Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
+  @@map("notifications")
 }
 
 model RefreshToken {

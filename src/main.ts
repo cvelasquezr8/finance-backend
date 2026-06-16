@@ -3,6 +3,7 @@ import { ValidationPipe, BadRequestException } from '@nestjs/common'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { ConfigService } from '@nestjs/config'
 import helmet from 'helmet'
+import cookieParser from 'cookie-parser'
 import { AppModule } from './app.module'
 import { AppLogger } from '@shared/logger'
 
@@ -18,6 +19,7 @@ async function bootstrap() {
   const corsOrigins = config.get<string>('app.cors.origins') ?? 'http://localhost:5173'
 
   app.use(helmet())
+  app.use(cookieParser())
 
   app.enableCors({
     origin: corsOrigins.split(',').map((o) => o.trim()),

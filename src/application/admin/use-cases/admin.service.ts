@@ -1,14 +1,25 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { EventEmitter2 } from '@nestjs/event-emitter'
 import { UserRepository } from '@domain/repositories/user.repository'
 import { UserEntity, UserRole, UserStatus } from '@domain/entities/user.entity'
+import { paginate, PaginateOptions } from '@shared/pagination/paginate'
+import { NOTIFICATION_EVENTS } from '@application/notifications/notification.events'
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly userRepo: UserRepository) {}
+  constructor(
+    private readonly userRepo: UserRepository,
+    private readonly emitter: EventEmitter2
+  ) {}
 
-  async listUsers() {
-    const users = await this.userRepo.findAll()
-    return users.map(AdminService.toDto)
+  async listUsers(query: PaginateOptions = {}) {
+    const users = (await this.userRepo.findAll()).map(AdminService.toDto)
+    return paginate(users, {
+      ...query,
+      sortBy: query.sortBy ?? 'createdAt',
+      order: query.order ?? 'desc',
+      searchableKeys: ['email', 'name', 'alias'],
+    })
   }
 
   async updateRole(userId: string, role: UserRole) {
@@ -26,6 +37,9 @@ export class AdminService {
       return AdminService.toDto(deleted)
     }
     const updated = await this.userRepo.update(userId, { status })
+    if (status === 'blocked') {
+      this.emitter.emit(NOTIFICATION_EVENTS.accountBlocked, { recipientUserId: userId })
+    }
     return AdminService.toDto(updated)
   }
 

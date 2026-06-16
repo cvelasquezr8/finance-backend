@@ -1,9 +1,12 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
+import { EventEmitterModule } from '@nestjs/event-emitter'
+import { ScheduleModule } from '@nestjs/schedule'
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
 import configuration from '@shared/config/configuration'
 import { PrismaModule } from '@infrastructure/database'
+import { MailModule } from '@infrastructure/mail/mail.module'
 import { I18nModule } from '@shared/i18n'
 import { AppLogger } from '@shared/logger'
 import { AuthModule } from '@interface/http/auth/auth.module'
@@ -12,11 +15,14 @@ import { BalanceModule } from '@interface/http/balance/balance.module'
 import { CardModule } from '@interface/http/card/card.module'
 import { EventModule } from '@interface/http/event/event.module'
 import { AdminModule } from '@interface/http/admin/admin.module'
+import { UserModule } from '@interface/http/user/user.module'
+import { NotificationModule } from '@interface/http/notification/notification.module'
 import { FilesModule } from '@interface/http/files/files.module'
 import { GlobalExceptionFilter } from '@interface/filters/global-exception.filter'
 import { LoggingInterceptor } from '@interface/interceptors/logging.interceptor'
 import { IdempotencyInterceptor } from '@interface/interceptors/idempotency.interceptor'
 import { JwtAuthGuard } from '@interface/guards/jwt-auth.guard'
+import { MustChangePasswordGuard } from '@interface/guards/must-change-password.guard'
 import { RolesGuard } from '@interface/guards/roles.guard'
 import { LangMiddleware } from '@interface/middlewares/lang.middleware'
 
@@ -28,14 +34,19 @@ import { LangMiddleware } from '@interface/middlewares/lang.middleware'
       envFilePath: '.env',
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
+    EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot(),
     I18nModule,
     PrismaModule,
+    MailModule,
     AuthModule,
     TransactionModule,
     BalanceModule,
     CardModule,
     EventModule,
     AdminModule,
+    UserModule,
+    NotificationModule,
     FilesModule,
   ],
   providers: [
@@ -44,6 +55,7 @@ import { LangMiddleware } from '@interface/middlewares/lang.middleware'
     { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
     { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: MustChangePasswordGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],

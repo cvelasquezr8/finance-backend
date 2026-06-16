@@ -1,0 +1,19 @@
+# Default: normalize to CRLF on checkout (Windows-primary repo; Prettier endOfLine=crlf)
+* text=auto eol=crlf
+
+# Shell scripts & Husky hooks — must stay LF or they break on macOS/Linux interpreters
+.husky/* text eol=lf
+*.sh      text eol=lf
+
+# Binary files — no conversion
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.svg   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary
+*.pdf   binary

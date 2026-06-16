@@ -1,0 +1,74 @@
+name: CI/CD Backend
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    name: Lint, test & build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+  deploy:
+    name: Migrate DB & deploy to Seenode
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Applies any pending Prisma migrations to the production DB.
+      # Requires the production database to be reachable from the GitHub runner
+      # (public host or IP allowlist). If it is NOT reachable from CI, delete this
+      # step and instead set the Seenode start command to `npm run start:migrate`
+      # so migrations run on the deploy target with its own DATABASE_URL.
+      - name: Apply database migrations (production)
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
+
+      - name: Trigger Seenode deployment
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.SEENODE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"gitCommitSha": "${{ github.sha }}"}' \
+            "https://api.seenode.com/v1/applications/${{ secrets.SEENODE_APPLICATION_ID }}/deployments"

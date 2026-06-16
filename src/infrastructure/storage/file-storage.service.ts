@@ -15,7 +15,7 @@ export class FileStorageService {
     const token = this.jwtService.sign(
       { filename, userId, purpose: 'file-access' },
       {
-        secret: this.configService.get<string>('database.jwt.accessSecret'),
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
         expiresIn: '1h',
       }
     )

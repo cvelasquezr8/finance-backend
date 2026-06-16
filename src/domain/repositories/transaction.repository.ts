@@ -7,11 +7,14 @@ export interface TransactionFilter {
   quincena?: string
   type?: string
   category?: string
+  cardId?: string
+  isCC?: boolean
 }
 
 export abstract class TransactionRepository {
   abstract findById(id: string): Promise<TransactionEntity | null>
   abstract findByFilter(filter: TransactionFilter): Promise<TransactionEntity[]>
+  abstract findByEventId(eventId: string): Promise<TransactionEntity[]>
   abstract findHistory(
     userId: string,
     year: number,

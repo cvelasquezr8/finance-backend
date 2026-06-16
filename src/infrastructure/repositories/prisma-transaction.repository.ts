@@ -28,10 +28,20 @@ export class PrismaTransactionRepository extends TransactionRepository {
       ...(filter.quincena && { quincena: filter.quincena as any }),
       ...(filter.type && { type: filter.type as any }),
       ...(filter.category && { category: filter.category as any }),
+      ...(filter.cardId && { cardId: filter.cardId }),
+      ...(filter.isCC !== undefined && { isCC: filter.isCC }),
     }
     const txs = await this.prisma.transaction.findMany({
       where,
       orderBy: [{ dueDay: 'asc' }, { createdAt: 'desc' }],
+    })
+    return txs.map(PrismaTransactionRepository.toEntity)
+  }
+
+  async findByEventId(eventId: string): Promise<TransactionEntity[]> {
+    const txs = await this.prisma.transaction.findMany({
+      where: { eventId, deletedAt: null },
+      orderBy: [{ year: 'desc' }, { month: 'desc' }, { dueDay: 'desc' }],
     })
     return txs.map(PrismaTransactionRepository.toEntity)
   }

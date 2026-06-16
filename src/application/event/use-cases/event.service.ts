@@ -1,10 +1,18 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common'
+import { EventEmitter2 } from '@nestjs/event-emitter'
 import { BudgetEventRepository } from '@domain/repositories/budget-event.repository'
 import { BudgetEventEntity } from '@domain/entities/budget-event.entity'
+import { TransactionRepository } from '@domain/repositories/transaction.repository'
+import { TransactionEntity } from '@domain/entities/transaction.entity'
+import { NOTIFICATION_EVENTS } from '@application/notifications/notification.events'
 
 @Injectable()
 export class EventService {
-  constructor(private readonly eventRepo: BudgetEventRepository) {}
+  constructor(
+    private readonly eventRepo: BudgetEventRepository,
+    private readonly txRepo: TransactionRepository,
+    private readonly emitter: EventEmitter2
+  ) {}
 
   async listEvents(userId: string) {
     const events = await this.eventRepo.findByUserId(userId)
@@ -47,6 +55,17 @@ export class EventService {
     if (event.createdBy !== requesterId)
       throw new ForbiddenException('Only the creator can invite participants')
     const updated = await this.eventRepo.addParticipant(eventId, requesterId, alias, assignedPct)
+    const participant = updated.participants.find(
+      (p) => p.alias.toLowerCase() === alias.toLowerCase()
+    )
+    if (participant) {
+      this.emitter.emit(NOTIFICATION_EVENTS.participantInvited, {
+        recipientUserId: participant.userId,
+        eventId: updated.id,
+        eventTitle: updated.title,
+        assignedPct: participant.assignedPct,
+      })
+    }
     return EventService.toDto(updated)
   }
 
@@ -59,6 +78,14 @@ export class EventService {
       status,
       new Date()
     )
+    const responder = updated.participants.find((p) => p.userId === userId)
+    this.emitter.emit(NOTIFICATION_EVENTS.participantResponded, {
+      recipientUserId: updated.createdBy,
+      eventId: updated.id,
+      eventTitle: updated.title,
+      responderAlias: responder?.alias ?? '',
+      status,
+    })
     return EventService.toDto(updated)
   }
 
@@ -87,6 +114,38 @@ export class EventService {
     if (event.createdBy !== requesterId)
       throw new ForbiddenException('Only the creator can cancel the event')
     await this.eventRepo.softDelete(eventId)
+  }
+
+  async getLinkedTransactions(eventId: string) {
+    const event = await this.eventRepo.findById(eventId)
+    if (!event) throw new NotFoundException('Event not found')
+    const txs = await this.txRepo.findByEventId(eventId)
+    const data = txs.map(EventService.toTxDto)
+    return { data, total: data.length, page: 1, pageSize: data.length, hasMore: false }
+  }
+
+  private static toTxDto(tx: TransactionEntity) {
+    return {
+      id: tx.id,
+      description: tx.description,
+      amount: tx.amount,
+      type: tx.type,
+      category: tx.category,
+      status: tx.status,
+      quincena: tx.quincena,
+      dueDay: tx.dueDay,
+      month: tx.month,
+      year: tx.year,
+      isRecurring: tx.isRecurring,
+      isCC: tx.isCC,
+      cardId: tx.cardId ?? null,
+      eventId: tx.eventId ?? null,
+      userId: tx.userId ?? null,
+      receiptUrl: tx.receiptUrl ?? null,
+      confirmedAt: tx.confirmedAt?.toISOString() ?? null,
+      createdAt: tx.createdAt.toISOString(),
+      updatedAt: tx.updatedAt.toISOString(),
+    }
   }
 
   private static toDto(event: BudgetEventEntity) {
