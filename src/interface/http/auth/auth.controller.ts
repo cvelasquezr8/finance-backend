@@ -52,11 +52,10 @@ export class AuthController {
 
   @Public()
   @Post('register')
-  @ApiOperation({ summary: 'Register new user' })
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.registerUseCase.execute(dto)
-    this.setRefreshCookie(res, result.refreshToken)
-    return result
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Register new user — account starts blocked until admin approves' })
+  async register(@Body() dto: RegisterDto) {
+    return this.registerUseCase.execute(dto)
   }
 
   @Public()

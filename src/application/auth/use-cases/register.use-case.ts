@@ -1,13 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { JwtService } from '@nestjs/jwt'
-import { ConfigService } from '@nestjs/config'
-import dayjs from 'dayjs'
 import * as argon2 from 'argon2'
 import { UserRepository } from '@domain/repositories'
 import { DuplicateEntityException } from '@domain/exceptions'
-import { PrismaService } from '@infrastructure/database'
-import { AuthResponsePayload } from './login.use-case'
-import { toUserDto } from '@application/user/user.mapper'
 
 export interface RegisterInput {
   firstName: string
@@ -20,16 +14,15 @@ export interface RegisterInput {
   phone?: string
 }
 
+export interface RegisterResult {
+  message: string
+}
+
 @Injectable()
 export class RegisterUseCase {
-  constructor(
-    private readonly userRepo: UserRepository,
-    private readonly jwtService: JwtService,
-    private readonly config: ConfigService,
-    private readonly prisma: PrismaService
-  ) {}
+  constructor(private readonly userRepo: UserRepository) {}
 
-  async execute(input: RegisterInput): Promise<AuthResponsePayload> {
+  async execute(input: RegisterInput): Promise<RegisterResult> {
     const [byEmail, byAlias] = await Promise.all([
       this.userRepo.findByEmail(input.email),
       this.userRepo.findByAlias(input.alias),
@@ -40,7 +33,7 @@ export class RegisterUseCase {
 
     const passwordHash = await argon2.hash(input.password)
 
-    const user = await this.userRepo.create({
+    await this.userRepo.create({
       email: input.email,
       passwordHash,
       firstName: input.firstName,
@@ -56,7 +49,7 @@ export class RegisterUseCase {
       avatarUrl: null,
       monthlyNotifications: true,
       role: 'USER',
-      status: 'active',
+      status: 'blocked',
       mustChangePassword: false,
       invitedBy: null,
       invitedAt: null,
@@ -66,27 +59,6 @@ export class RegisterUseCase {
       deletedLocalTimeAt: null,
     })
 
-    const payload = { sub: user.id, email: user.email, role: user.role, lang: user.language }
-
-    const token = this.jwtService.sign(payload, {
-      secret: this.config.get<string>('JWT_ACCESS_SECRET'),
-      expiresIn: (this.config.get<string>('JWT_ACCESS_EXPIRES_IN') ?? '15m') as any,
-    })
-
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.config.get<string>('JWT_REFRESH_SECRET'),
-      expiresIn: (this.config.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '7d') as any,
-    })
-
-    await (this.prisma as any).refreshToken.create({
-      data: { token: refreshToken, userId: user.id, expiresAt: dayjs().add(7, 'day').toDate() },
-    })
-
-    return {
-      token,
-      refreshToken,
-      expiresIn: 900,
-      user: toUserDto(user),
-    }
+    return { message: 'registration_pending' }
   }
 }
