@@ -2,23 +2,18 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { OnEvent } from '@nestjs/event-emitter'
 import { UserRepository } from '@domain/repositories/user.repository'
 import { NotificationRepository } from '@domain/repositories/notification.repository'
-import { NotificationEntity } from '@domain/entities/notification.entity'
+import { NotificationEntity, NotificationType } from '@domain/entities/notification.entity'
 import { paginate, PaginateOptions } from '@shared/pagination/paginate'
 import {
   NOTIFICATION_EVENTS,
   ParticipantInvitedEvent,
   ParticipantRespondedEvent,
+  EventClosedEvent,
+  EventReopenedEvent,
   AccountInvitedEvent,
   AccountBlockedEvent,
   MonthlySummaryEvent,
 } from './notification.events'
-
-type NotificationType =
-  | 'event_invitation'
-  | 'invitation_response'
-  | 'account_invited'
-  | 'account_blocked'
-  | 'monthly_summary'
 
 interface NotificationDto {
   id: string
@@ -111,6 +106,34 @@ export class NotificationService {
       en
         ? `@${e.responderAlias} ${accepted ? 'accepted' : 'declined'} "${e.eventTitle}".`
         : `@${e.responderAlias} ${accepted ? 'aceptó' : 'rechazó'} "${e.eventTitle}".`,
+      e.eventId
+    )
+  }
+
+  @OnEvent(NOTIFICATION_EVENTS.eventClosed)
+  async onEventClosed(e: EventClosedEvent) {
+    const en = (await this.langOf(e.recipientUserId)) === 'en'
+    await this.createForUser(
+      e.recipientUserId,
+      'event_closed',
+      en ? 'Event closed' : 'Evento cerrado',
+      en
+        ? `"${e.eventTitle}" was closed by @${e.closedByAlias}.`
+        : `"${e.eventTitle}" fue cerrado por @${e.closedByAlias}.`,
+      e.eventId
+    )
+  }
+
+  @OnEvent(NOTIFICATION_EVENTS.eventReopened)
+  async onEventReopened(e: EventReopenedEvent) {
+    const en = (await this.langOf(e.recipientUserId)) === 'en'
+    await this.createForUser(
+      e.recipientUserId,
+      'event_reopened',
+      en ? 'Event reopened' : 'Evento reabierto',
+      en
+        ? `"${e.eventTitle}" was reopened by @${e.reopenedByAlias}.`
+        : `"${e.eventTitle}" fue reabierto por @${e.reopenedByAlias}.`,
       e.eventId
     )
   }

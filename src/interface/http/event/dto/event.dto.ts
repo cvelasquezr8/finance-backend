@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsNumber,
@@ -71,5 +72,6 @@ export class AddShoppingItemDto {
 
 export class ToggleShoppingItemDto {
   @ApiProperty()
+  @IsBoolean()
   bought: boolean
 }

@@ -2,6 +2,8 @@
 export const NOTIFICATION_EVENTS = {
   participantInvited: 'event.participant_invited',
   participantResponded: 'event.participant_responded',
+  eventClosed: 'event.closed',
+  eventReopened: 'event.reopened',
   accountInvited: 'account.invited',
   accountBlocked: 'account.blocked',
   monthlySummary: 'summary.monthly',
@@ -28,6 +30,20 @@ export interface AccountInvitedEvent {
 
 export interface AccountBlockedEvent {
   recipientUserId: string
+}
+
+export interface EventClosedEvent {
+  recipientUserId: string
+  eventId: string
+  eventTitle: string
+  closedByAlias: string
+}
+
+export interface EventReopenedEvent {
+  recipientUserId: string
+  eventId: string
+  eventTitle: string
+  reopenedByAlias: string
 }
 
 export interface MonthlySummaryEvent {

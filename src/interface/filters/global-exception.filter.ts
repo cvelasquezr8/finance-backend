@@ -3,6 +3,7 @@ import { Request, Response } from 'express'
 import dayjs from 'dayjs'
 import { AppLogger } from '@shared/logger'
 import { I18nService, SupportedLang, DEFAULT_LANG } from '@shared/i18n'
+import { PrismaService } from '@infrastructure/database'
 import {
   DomainException,
   EntityNotFoundException,
@@ -28,11 +29,44 @@ export interface ErrorEnvelope {
   path: string
 }
 
+/** Fields that should never be logged even in sanitized form. */
+const SENSITIVE_BODY_KEYS = new Set([
+  'password',
+  'passwordHash',
+  'currentPassword',
+  'newPassword',
+  'confirmPassword',
+  'token',
+  'refreshToken',
+  'accessToken',
+  'secret',
+  'authorization',
+  'cvv',
+  'cardNumber',
+  'pan',
+])
+
+/** Returns a deep-sanitized copy of an object, redacting sensitive fields. */
+function sanitize(value: unknown, depth = 0): unknown {
+  if (depth > 4 || value === null || value === undefined) return value
+  if (typeof value !== 'object') return value
+  if (Array.isArray(value)) return value.slice(0, 20).map((v) => sanitize(v, depth + 1))
+
+  const result: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    result[k] = SENSITIVE_BODY_KEYS.has(k) ? '[REDACTED]' : sanitize(v, depth + 1)
+  }
+  return result
+}
+
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new AppLogger()
 
-  constructor(private readonly i18n: I18nService) {
+  constructor(
+    private readonly i18n: I18nService,
+    private readonly prisma: PrismaService
+  ) {
     this.logger.setContext('GlobalExceptionFilter')
   }
 
@@ -46,20 +80,46 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const shape = this.classify(exception)
     const message = this.i18n.t(shape.messageKey, lang, shape.vars)
 
+    const userId: string | undefined = (req as any).user?.id
+    const stack = exception instanceof Error ? exception.stack : undefined
+    const errorType =
+      exception instanceof Error
+        ? exception.constructor.name
+        : typeof exception === 'object' && exception !== null
+          ? ((exception as any).constructor?.name ?? 'UnknownError')
+          : 'UnknownError'
+
     const logCtx = {
-      userId: (req as any).user?.id,
+      userId,
       ip: req.ip,
       path: req.path,
       method: req.method,
-      stack: exception instanceof Error ? exception.stack : undefined,
+      statusCode: shape.status,
+      errorType,
     }
 
+    // ── Console log ────────────────────────────────────────────────────────────
     if (shape.status >= 500) {
-      this.logger.error(`[${shape.status}] ${message}`, (exception as Error)?.stack, logCtx)
+      this.logger.error(`[${shape.status}] ${shape.messageKey}`, stack, logCtx)
     } else {
-      this.logger.warn(`[${shape.status}] ${shape.code}`, logCtx)
+      this.logger.warn(
+        `[${shape.status}] ${shape.code}${shape.details ? ` — ${JSON.stringify(shape.details)}` : ''}`,
+        logCtx
+      )
     }
 
+    // ── Persist to DB (ALL errors) ──────────────────────────────────────────
+    this.persistLog({
+      status: shape.status,
+      code: shape.code,
+      message: exception instanceof Error ? exception.message : String(exception),
+      errorType,
+      userId,
+      req,
+      stack,
+    })
+
+    // ── HTTP response ──────────────────────────────────────────────────────────
     const envelope: ErrorEnvelope = {
       success: false,
       code: shape.code,
@@ -73,6 +133,53 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   }
 
   // ─── Private ──────────────────────────────────────────────────────────────
+
+  /** Writes the error record to the DB without blocking the HTTP response. */
+  private persistLog(params: {
+    status: number
+    code: string
+    message: string
+    errorType: string
+    userId: string | undefined
+    req: Request
+    stack: string | undefined
+  }) {
+    const { status, code, message, errorType, userId, req, stack } = params
+
+    let sanitizedBody: unknown = undefined
+    if (req.body && typeof req.body === 'object' && Object.keys(req.body as object).length > 0) {
+      sanitizedBody = sanitize(req.body)
+    }
+
+    let sanitizedQuery: unknown = undefined
+    if (req.query && typeof req.query === 'object' && Object.keys(req.query).length > 0) {
+      sanitizedQuery = sanitize(req.query)
+    }
+
+    const level = status >= 500 ? 'error' : status >= 400 ? 'warn' : 'info'
+
+    this.prisma.errorLog
+      .create({
+        data: {
+          level,
+          statusCode: status,
+          errorType,
+          message: `[${code}] ${message}`,
+          context: 'GlobalExceptionFilter',
+          userId: userId ?? null,
+          ip: req.ip ?? null,
+          path: req.path,
+          method: req.method,
+          stack: stack ?? null,
+          requestBody: sanitizedBody !== undefined ? (sanitizedBody as any) : undefined,
+          requestQuery: sanitizedQuery !== undefined ? (sanitizedQuery as any) : undefined,
+        },
+      })
+      .catch((err) => {
+        // best-effort — never crash the response on logging failure
+        this.logger.error('Failed to persist error log to DB', String(err))
+      })
+  }
 
   private classify(exception: unknown): ErrorShape {
     if (exception instanceof HttpException) {

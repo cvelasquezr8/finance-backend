@@ -23,9 +23,14 @@ export class PrismaTransactionRepository extends TransactionRepository {
     const where: Prisma.TransactionWhereInput = {
       userId: filter.userId,
       deletedAt: null,
+      // Exclude transactions from closed (COMPLETED) events — they should not appear in regular lists
+      OR: [{ eventId: null }, { event: { status: { not: 'COMPLETED' } } }],
       ...(filter.month && { month: filter.month }),
       ...(filter.year && { year: filter.year }),
-      ...(filter.quincena && { quincena: filter.quincena as any }),
+      ...(filter.quincena &&
+        (filter.quincena === 'primera' || filter.quincena === 'segunda') && {
+          quincena: filter.quincena,
+        }),
       ...(filter.type && { type: filter.type as any }),
       ...(filter.category && { category: filter.category as any }),
       ...(filter.cardId && { cardId: filter.cardId }),
@@ -52,14 +57,16 @@ export class PrismaTransactionRepository extends TransactionRepository {
     type?: string,
     category?: string
   ): Promise<TransactionEntity[]> {
+    const where: Prisma.TransactionWhereInput = {
+      userId,
+      year,
+      deletedAt: null,
+      OR: [{ eventId: null }, { event: { status: { not: 'COMPLETED' } } }],
+      ...(type && type !== 'all' && { type: type as any }),
+      ...(category && category !== 'all' && { category: category as any }),
+    }
     const txs = await this.prisma.transaction.findMany({
-      where: {
-        userId,
-        year,
-        deletedAt: null,
-        ...(type && { type: type as any }),
-        ...(category && { category: category as any }),
-      },
+      where,
       orderBy: [{ month: 'desc' }, { dueDay: 'desc' }],
     })
     return txs.map(PrismaTransactionRepository.toEntity)
@@ -98,9 +105,16 @@ export class PrismaTransactionRepository extends TransactionRepository {
     year: number,
     quincena: string
   ): Promise<Record<string, number>> {
+    const validQuincena = quincena === 'primera' || quincena === 'segunda' ? quincena : undefined
     const results = await this.prisma.transaction.groupBy({
       by: ['type', 'status', 'isCC'],
-      where: { userId, month, year, quincena: quincena as any, deletedAt: null },
+      where: {
+        userId,
+        month,
+        year,
+        ...(validQuincena ? { quincena: validQuincena } : {}),
+        deletedAt: null,
+      },
       _sum: { amount: true },
     })
     const sums: Record<string, number> = {}

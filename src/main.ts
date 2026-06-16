@@ -16,13 +16,16 @@ async function bootstrap() {
   const config = app.get(ConfigService)
   const port = config.get<number>('app.app.port') ?? 3000
   const prefix = config.get<string>('app.app.prefix') ?? 'api/v1'
-  const corsOrigins = config.get<string>('app.cors.origins') ?? 'http://localhost:5173'
+  const corsOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:3001,http://localhost:5173')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean)
 
   app.use(helmet())
   app.use(cookieParser())
 
   app.enableCors({
-    origin: corsOrigins.split(',').map((o) => o.trim()),
+    origin: corsOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-idempotency-key'],
     credentials: true,

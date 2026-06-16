@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Patch } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import { CurrentUser } from '@interface/decorators/current-user.decorator'
 import { AllowDuringPasswordReset } from '@interface/decorators/allow-during-password-reset.decorator'
@@ -23,5 +23,12 @@ export class UserController {
   @ApiOperation({ summary: 'Update current user profile' })
   updateMe(@CurrentUser() user: UserEntity, @Body() dto: UpdateProfileDto) {
     return this.profileService.updateProfile(user.id, dto)
+  }
+
+  @Delete('me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete own account (anonymize + soft delete)' })
+  async deleteMe(@CurrentUser() user: UserEntity) {
+    await this.profileService.deleteMyAccount(user.id)
   }
 }

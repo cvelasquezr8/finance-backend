@@ -108,6 +108,51 @@ export class EventService {
     return EventService.toDto(updated)
   }
 
+  async closeEvent(eventId: string, requesterId: string, requesterRole: string) {
+    const event = await this.eventRepo.findById(eventId)
+    if (!event) throw new NotFoundException('Event not found')
+    if (event.createdBy !== requesterId && requesterRole !== 'ADMIN')
+      throw new ForbiddenException('Only the creator or an admin can close this event')
+    if (event.status !== 'ACTIVE') throw new ForbiddenException('Only active events can be closed')
+    const updated = await this.eventRepo.update(eventId, { status: 'COMPLETED' })
+    const requester = updated.participants.find((p) => p.userId === requesterId)
+    const requesterAlias = requester?.alias ?? requesterId
+    const confirmed = updated.participants.filter((p) => p.status === 'CONFIRMED')
+    for (const participant of confirmed) {
+      if (participant.userId === requesterId) continue
+      this.emitter.emit(NOTIFICATION_EVENTS.eventClosed, {
+        recipientUserId: participant.userId,
+        eventId: updated.id,
+        eventTitle: updated.title,
+        closedByAlias: requesterAlias,
+      })
+    }
+    return EventService.toDto(updated)
+  }
+
+  async reopenEvent(eventId: string, requesterId: string, requesterRole: string) {
+    const event = await this.eventRepo.findById(eventId)
+    if (!event) throw new NotFoundException('Event not found')
+    if (event.createdBy !== requesterId && requesterRole !== 'ADMIN')
+      throw new ForbiddenException('Only the creator or an admin can reopen this event')
+    if (event.status !== 'COMPLETED')
+      throw new ForbiddenException('Only closed events can be reopened')
+    const updated = await this.eventRepo.update(eventId, { status: 'ACTIVE' })
+    const requester = updated.participants.find((p) => p.userId === requesterId)
+    const requesterAlias = requester?.alias ?? requesterId
+    const confirmed = updated.participants.filter((p) => p.status === 'CONFIRMED')
+    for (const participant of confirmed) {
+      if (participant.userId === requesterId) continue
+      this.emitter.emit(NOTIFICATION_EVENTS.eventReopened, {
+        recipientUserId: participant.userId,
+        eventId: updated.id,
+        eventTitle: updated.title,
+        reopenedByAlias: requesterAlias,
+      })
+    }
+    return EventService.toDto(updated)
+  }
+
   async cancelEvent(eventId: string, requesterId: string) {
     const event = await this.eventRepo.findById(eventId)
     if (!event) throw new NotFoundException('Event not found')

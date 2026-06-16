@@ -26,12 +26,26 @@ export class BalanceService {
       orderBy: { createdAt: 'desc' },
       take: 1,
     })
-    const initialBalance = adjustments[0] ? Number(adjustments[0].newBalance) : 0
+    const adjustmentBalance = adjustments[0] ? Number(adjustments[0].newBalance) : 0
+
+    // For segunda quincena the starting balance is what was left after primera
+    let initialBalance = adjustmentBalance
+    if (quincena === 'segunda') {
+      const primeraSums = await this.txRepo.sumByType(userId, month, year, 'primera')
+      initialBalance =
+        adjustmentBalance +
+        (primeraSums['income_confirmed_cash'] ?? 0) -
+        (primeraSums['scheduled_confirmed_cash'] ?? 0) -
+        (primeraSums['daily_confirmed_cash'] ?? 0)
+    }
+
     const currentBalance = initialBalance + income - confirmedScheduled - dailyExpenses
     const projectedBalance = currentBalance - pendingScheduled
 
     const today = dayjs()
-    const daysInPeriod = quincena === 'primera' ? 15 : dayjs(`${year}-${month}`).daysInMonth() - 15
+    const paddedMonth = String(month).padStart(2, '0')
+    const daysInPeriod =
+      quincena === 'primera' ? 15 : dayjs(`${year}-${paddedMonth}`).daysInMonth() - 15
     const dayOfPeriod =
       quincena === 'primera' ? Math.min(today.date(), 15) : Math.max(today.date() - 15, 0)
     const remainingDays = Math.max(daysInPeriod - dayOfPeriod, 0)

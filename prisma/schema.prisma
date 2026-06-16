@@ -70,6 +70,8 @@ enum ParticipantStatus {
 enum NotificationType {
   event_invitation
   invitation_response
+  event_closed
+  event_reopened
   account_invited
   account_blocked
   monthly_summary
@@ -115,6 +117,7 @@ model User {
   eventParticipants    EventParticipant[]
   createdEvents        BudgetEvent[]
   notifications        Notification[]
+  balanceAdjustments   BalanceAdjustment[]
 
   @@map("users")
 }
@@ -181,6 +184,8 @@ model Transaction {
 
   @@index([userId, month, year, quincena])
   @@index([userId, year])
+  @@index([eventId, deletedAt])
+  @@index([cardId])
   @@map("transactions")
 }
 
@@ -201,6 +206,7 @@ model Card {
   user         User          @relation(fields: [userId], references: [id])
   transactions Transaction[]
 
+  @@index([userId, deletedAt])
   @@map("cards")
 }
 
@@ -225,6 +231,8 @@ model BudgetEvent {
   shoppingItems ShoppingItem[]
   transactions  Transaction[]
 
+  @@index([createdBy, deletedAt])
+  @@index([status, deletedAt])
   @@map("budget_events")
 }
 
@@ -242,6 +250,7 @@ model EventParticipant {
   user  User        @relation(fields: [userId], references: [id])
 
   @@unique([eventId, userId])
+  @@index([userId])
   @@map("event_participants")
 }
 
@@ -278,21 +287,27 @@ model IdempotencyKey {
   @@map("idempotency_keys")
 }
 
-// Tabla de logs de errores críticos persistidos
+// Tabla de logs de errores persistidos (todos los errores, no solo 5xx)
 model ErrorLog {
-  id          String   @id @default(uuid())
-  level       String
-  message     String   @db.Text
-  context     String?
-  userId      String?
-  ip          String?
-  path        String?
-  method      String?
-  stack       String?  @db.Text
-  requestBody Json?
-  createdAt   DateTime @default(now())
+  id           String   @id @default(uuid())
+  level        String
+  statusCode   Int?
+  errorType    String?
+  message      String   @db.Text
+  context      String?
+  userId       String?
+  ip           String?
+  path         String?
+  method       String?
+  stack        String?  @db.Text
+  requestBody  Json?
+  requestQuery Json?
+
+  createdAt DateTime @default(now())
 
   @@index([level, createdAt])
+  @@index([statusCode, createdAt])
+  @@index([userId, createdAt])
   @@map("error_logs")
 }
 
@@ -308,5 +323,8 @@ model BalanceAdjustment {
   createdAt          DateTime @default(now())
   createdLocalTimeAt DateTime?
 
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
   @@map("balance_adjustments")
 }

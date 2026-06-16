@@ -84,7 +84,9 @@ export class TransactionController {
     @Query('type') type?: string,
     @Query('category') category?: string
   ) {
-    return this.txService.listHistory(user.id, Number(year), type, category)
+    const parsedYear = Number(year)
+    const resolvedYear = Number.isInteger(parsedYear) ? parsedYear : new Date().getFullYear()
+    return this.txService.listHistory(user.id, resolvedYear, type, category)
   }
 
   @Post(':id/receipt')

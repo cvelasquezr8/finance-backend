@@ -1,40 +1,68 @@
 import { Injectable } from '@nestjs/common'
-import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
-import * as fs from 'fs'
-import * as path from 'path'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { randomUUID } from 'crypto'
+
+const EXTENSION_MAP: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'application/pdf': 'pdf',
+}
+
+const PRESIGN_TTL_SECONDS = 300 // 5 minutes
+
+export interface PresignResult {
+  presignedUrl: string
+  fileKey: string
+  publicUrl: string
+}
 
 @Injectable()
 export class FileStorageService {
-  constructor(
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService
-  ) {}
+  private readonly client: S3Client
+  private readonly bucket: string
+  private readonly publicBase: string
 
-  generateSignedUrl(filename: string, userId: string): string {
-    const token = this.jwtService.sign(
-      { filename, userId, purpose: 'file-access' },
-      {
-        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-        expiresIn: '1h',
-      }
-    )
-    const baseUrl = `http://localhost:${this.configService.get('app.app.port') ?? 3000}`
-    return `${baseUrl}/api/v1/files/receipts/${filename}?token=${token}`
-  }
+  constructor(private readonly configService: ConfigService) {
+    const accountId = configService.getOrThrow<string>('R2_ACCOUNT_ID')
+    this.bucket = configService.getOrThrow<string>('R2_BUCKET_NAME')
+    this.publicBase = configService.getOrThrow<string>('R2_PUBLIC_URL').replace(/\/$/, '')
 
-  validateToken(token: string): { filename: string; userId: string } {
-    return this.jwtService.verify(token, {
-      secret: this.configService.get<string>('database.jwt.accessSecret'),
+    this.client = new S3Client({
+      region: 'auto',
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: configService.getOrThrow<string>('R2_ACCESS_KEY_ID'),
+        secretAccessKey: configService.getOrThrow<string>('R2_SECRET_ACCESS_KEY'),
+      },
     })
   }
 
-  getFilePath(filename: string): string {
-    const uploadDest = this.configService.get<string>('app.storage.dest') ?? './uploads'
-    return path.resolve(uploadDest, 'receipts', filename)
-  }
+  async generatePresignedUploadUrl(
+    userId: string,
+    mimeType: string,
+    sizeBytes: number
+  ): Promise<PresignResult> {
+    const ext = EXTENSION_MAP[mimeType] ?? 'bin'
+    const fileKey = `receipts/${userId}/${randomUUID()}.${ext}`
 
-  fileExists(filename: string): boolean {
-    return fs.existsSync(this.getFilePath(filename))
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: fileKey,
+      ContentType: mimeType,
+      ContentLength: sizeBytes,
+    })
+
+    const presignedUrl = await getSignedUrl(this.client, command, {
+      expiresIn: PRESIGN_TTL_SECONDS,
+    })
+
+    return {
+      presignedUrl,
+      fileKey,
+      publicUrl: `${this.publicBase}/${fileKey}`,
+    }
   }
 }

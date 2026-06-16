@@ -71,6 +71,18 @@ export class EventController {
     return this.eventService.toggleShoppingItem(eventId, itemId, user.id, dto.bought)
   }
 
+  @Patch(':id/close')
+  @ApiOperation({ summary: 'Close event' })
+  close(@CurrentUser() user: UserEntity, @Param('id') id: string) {
+    return this.eventService.closeEvent(id, user.id, user.role)
+  }
+
+  @Patch(':id/reopen')
+  @ApiOperation({ summary: 'Reopen event' })
+  reopen(@CurrentUser() user: UserEntity, @Param('id') id: string) {
+    return this.eventService.reopenEvent(id, user.id, user.role)
+  }
+
   @Post(':id/cancel')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Cancel event' })
