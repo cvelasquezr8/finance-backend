@@ -1,24 +1,16 @@
 export type TransactionType = 'scheduled' | 'daily' | 'income' | 'adjustment'
-export type TransactionCategory =
-  | 'vivienda'
-  | 'servicios'
-  | 'alimentacion'
-  | 'transporte'
-  | 'salud'
-  | 'entretenimiento'
-  | 'educacion'
-  | 'deuda'
-  | 'otros'
 export type TransactionStatus = 'pending' | 'confirmed' | 'cancelled'
 export type QuincenaType = 'primera' | 'segunda'
 
 export interface TransactionEntity {
   id: string
+  numericId: number
   userId: string
   description: string
   amount: number
   type: TransactionType
-  category: TransactionCategory
+  categoryId: number
+  categoryCode: string
   status: TransactionStatus
   quincena: QuincenaType
   dueDay: number

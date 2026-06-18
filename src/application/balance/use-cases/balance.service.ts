@@ -96,12 +96,13 @@ export class BalanceService {
 
   async addIncome(userId: string, description: string, amount: number, timezone: string) {
     const now = dayjs()
+    const categoryId = (await this.txRepo.findCategoryIdByCode('otros')) ?? 9
     await this.txRepo.create({
       userId,
       description,
       amount,
       type: 'income',
-      category: 'otros',
+      categoryId,
       status: 'confirmed',
       quincena: now.date() <= 15 ? 'primera' : 'segunda',
       dueDay: now.date(),

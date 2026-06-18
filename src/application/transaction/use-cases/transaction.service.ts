@@ -8,6 +8,10 @@ import { UpdateTransactionDto } from '@interface/http/transaction/dto/update-tra
 export class TransactionService {
   constructor(private readonly txRepo: TransactionRepository) {}
 
+  async listCategories() {
+    return this.txRepo.listCategories()
+  }
+
   async list(
     userId: string,
     month: number,
@@ -41,9 +45,20 @@ export class TransactionService {
   async create(userId: string, dto: CreateTransactionDto, userTimezone: string): Promise<object> {
     const now = new Date()
     const status = dto.type === 'income' || dto.type === 'daily' ? 'confirmed' : 'pending'
+    const categoryId = await this.txRepo.findCategoryIdByCode(dto.category)
+    if (!categoryId) throw new NotFoundException(`Category '${dto.category}' not found`)
     const tx = await this.txRepo.create({
       userId,
-      ...dto,
+      description: dto.description,
+      amount: dto.amount,
+      type: dto.type,
+      categoryId,
+      quincena: dto.quincena,
+      dueDay: dto.dueDay,
+      month: dto.month,
+      year: dto.year,
+      isRecurring: dto.isRecurring,
+      isCC: dto.isCC,
       cardId: dto.cardId ?? null,
       eventId: dto.eventId ?? null,
       status,
@@ -83,8 +98,16 @@ export class TransactionService {
     const tx = await this.txRepo.findById(txId)
     if (!tx) throw new NotFoundException('Transaction not found')
     if (tx.userId !== userId) throw new ForbiddenException()
+    const { category, ...rest } = dto
+    let categoryId: number | undefined
+    if (category) {
+      const found = await this.txRepo.findCategoryIdByCode(category)
+      if (!found) throw new NotFoundException(`Category '${category}' not found`)
+      categoryId = found
+    }
     const updated = await this.txRepo.update(txId, {
-      ...dto,
+      ...rest,
+      ...(categoryId !== undefined && { categoryId }),
       updatedLocalTimeAt: this.localNow(userTimezone),
     })
     return TransactionService.toDto(updated)
@@ -119,10 +142,12 @@ export class TransactionService {
   private static toDto(tx: TransactionEntity): object {
     return {
       id: tx.id,
+      numericId: tx.numericId,
       description: tx.description,
       amount: tx.amount,
       type: tx.type,
-      category: tx.category,
+      category: tx.categoryCode,
+      categoryId: tx.categoryId,
       status: tx.status,
       quincena: tx.quincena,
       dueDay: tx.dueDay,

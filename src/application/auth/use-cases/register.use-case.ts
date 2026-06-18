@@ -12,6 +12,9 @@ export interface RegisterInput {
   password: string
   alias: string
   phone?: string
+  language?: string
+  timezone?: string
+  currency?: string
 }
 
 export interface RegisterResult {
@@ -42,9 +45,9 @@ export class RegisterUseCase {
       secondLastName: input.secondLastName ?? null,
       phone: input.phone ?? null,
       alias: input.alias,
-      currency: 'MXN',
-      timezone: 'America/Mexico_City',
-      language: 'es',
+      currency: input.currency ?? 'MXN',
+      timezone: input.timezone ?? 'America/Mexico_City',
+      language: input.language ?? 'es',
       theme: 'dark',
       avatarUrl: null,
       monthlyNotifications: true,

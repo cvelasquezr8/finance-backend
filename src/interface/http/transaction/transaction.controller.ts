@@ -30,6 +30,12 @@ import { ConfirmTransactionDto } from './dto/confirm-transaction.dto'
 export class TransactionController {
   constructor(private readonly txService: TransactionService) {}
 
+  @Get('categories')
+  @ApiOperation({ summary: 'List all active transaction categories' })
+  listCategories() {
+    return this.txService.listCategories()
+  }
+
   @Get()
   @ApiOperation({ summary: 'List transactions by quincena/month' })
   list(

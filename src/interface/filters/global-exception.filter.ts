@@ -9,6 +9,9 @@ import {
   EntityNotFoundException,
   DuplicateEntityException,
   BusinessRuleViolationException,
+  InvalidCredentialsException,
+  AccountLockedException,
+  AccountPendingException,
 } from '@domain/exceptions'
 
 interface ErrorShape {
@@ -213,6 +216,31 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         code: exception.code,
         messageKey: 'errors.BUSINESS_RULE_VIOLATION',
         vars: { message: exception.message },
+      }
+    }
+
+    if (exception instanceof InvalidCredentialsException) {
+      return {
+        status: HttpStatus.UNAUTHORIZED,
+        code: exception.code,
+        messageKey: 'errors.INVALID_CREDENTIALS_ATTEMPTS',
+        vars: { remaining: String(exception.remaining) },
+      }
+    }
+
+    if (exception instanceof AccountLockedException) {
+      return {
+        status: HttpStatus.UNAUTHORIZED,
+        code: exception.code,
+        messageKey: 'errors.ACCOUNT_LOCKED',
+      }
+    }
+
+    if (exception instanceof AccountPendingException) {
+      return {
+        status: HttpStatus.UNAUTHORIZED,
+        code: exception.code,
+        messageKey: 'errors.ACCOUNT_PENDING',
       }
     }
 

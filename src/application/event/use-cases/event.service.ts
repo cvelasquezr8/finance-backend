@@ -175,7 +175,7 @@ export class EventService {
       description: tx.description,
       amount: tx.amount,
       type: tx.type,
-      category: tx.category,
+      category: tx.categoryCode,
       status: tx.status,
       quincena: tx.quincena,
       dueDay: tx.dueDay,

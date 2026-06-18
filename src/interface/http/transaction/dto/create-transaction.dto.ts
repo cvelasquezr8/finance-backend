@@ -11,11 +11,7 @@ import {
   Min,
 } from 'class-validator'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import {
-  TransactionCategory,
-  TransactionType,
-  QuincenaType,
-} from '@domain/entities/transaction.entity'
+import { TransactionType, QuincenaType } from '@domain/entities/transaction.entity'
 
 export class CreateTransactionDto {
   @ApiProperty({ example: 'Renta mensual' })
@@ -31,31 +27,9 @@ export class CreateTransactionDto {
   @IsEnum(['scheduled', 'daily', 'income', 'adjustment'] as TransactionType[])
   type: TransactionType
 
-  @ApiProperty({
-    enum: [
-      'vivienda',
-      'servicios',
-      'alimentacion',
-      'transporte',
-      'salud',
-      'entretenimiento',
-      'educacion',
-      'deuda',
-      'otros',
-    ],
-  })
-  @IsEnum([
-    'vivienda',
-    'servicios',
-    'alimentacion',
-    'transporte',
-    'salud',
-    'entretenimiento',
-    'educacion',
-    'deuda',
-    'otros',
-  ] as TransactionCategory[])
-  category: TransactionCategory
+  @ApiProperty({ example: 'vivienda', description: 'Category code from GET /categories' })
+  @IsString()
+  category: string
 
   @ApiProperty({ enum: ['primera', 'segunda'] })
   @IsEnum(['primera', 'segunda'] as QuincenaType[])

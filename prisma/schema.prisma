@@ -27,18 +27,6 @@ enum TransactionType {
   adjustment
 }
 
-enum TransactionCategory {
-  vivienda
-  servicios
-  alimentacion
-  transporte
-  salud
-  entretenimiento
-  educacion
-  deuda
-  otros
-}
-
 enum TransactionStatus {
   pending
   confirmed
@@ -81,6 +69,7 @@ enum NotificationType {
 
 model User {
   id             String     @id @default(uuid())
+  numericId      Int        @unique @default(autoincrement())
   email          String     @unique
   passwordHash   String
   firstName      String
@@ -97,6 +86,10 @@ model User {
   monthlyNotifications Boolean @default(true)
   role           UserRole   @default(USER)
   status         UserStatus @default(active)
+
+  // Brute-force protection: consecutive failed logins. Reset to 0 on successful
+  // login or when an admin reactivates the account. Account is blocked at 3.
+  failedLoginAttempts Int @default(0)
 
   // Invitation flow: a user invited by an admin logs in with a temp password and
   // is forced to change it before doing anything else.
@@ -124,6 +117,7 @@ model User {
 
 model Notification {
   id        String           @id @default(uuid())
+  numericId Int              @unique @default(autoincrement())
   userId    String
   type      NotificationType
   title     String
@@ -152,14 +146,28 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+model TransactionCategory {
+  id       Int     @id @default(autoincrement())
+  code     String  @unique
+  nameEs   String
+  nameEn   String
+  isActive Boolean @default(true)
+
+  transactions Transaction[]
+
+  @@map("transaction_categories")
+}
+
 model Transaction {
-  id          String              @id @default(uuid())
+  id          String            @id @default(uuid())
+  numericId   Int               @unique @default(autoincrement())
   userId      String
   description String
-  amount      Decimal             @db.Decimal(12, 2)
+  amount      Decimal           @db.Decimal(12, 2)
   type        TransactionType
-  category    TransactionCategory
-  status      TransactionStatus   @default(pending)
+  categoryId  Int
+  category    TransactionCategory @relation(fields: [categoryId], references: [id])
+  status      TransactionStatus @default(pending)
   quincena    QuincenaType
   dueDay      Int
   month       Int
@@ -191,6 +199,7 @@ model Transaction {
 
 model Card {
   id        String   @id @default(uuid())
+  numericId Int      @unique @default(autoincrement())
   userId    String
   name      String
   lastFour  String   @db.Char(4)
@@ -212,6 +221,7 @@ model Card {
 
 model BudgetEvent {
   id          String      @id @default(uuid())
+  numericId   Int         @unique @default(autoincrement())
   title       String
   description String?
   goalAmount  Decimal     @db.Decimal(12, 2)
@@ -314,6 +324,7 @@ model ErrorLog {
 // Historial de ajustes de balance
 model BalanceAdjustment {
   id             String   @id @default(uuid())
+  numericId      Int      @unique @default(autoincrement())
   userId         String
   previousBalance Decimal @db.Decimal(12, 2)
   newBalance     Decimal  @db.Decimal(12, 2)

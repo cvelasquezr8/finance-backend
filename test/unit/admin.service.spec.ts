@@ -51,7 +51,15 @@ describe('AdminService', () => {
 
   it('emits account.blocked when status becomes blocked', async () => {
     await service.updateStatus('u1', 'blocked')
-    expect(emitter.emit).toHaveBeenCalledWith('account.blocked', { recipientUserId: 'u1' })
+    expect(emitter.emit).toHaveBeenCalledWith('account.blocked', {
+      recipientUserId: 'u1',
+      reason: 'admin',
+    })
+  })
+
+  it('resets failedLoginAttempts when reactivating a user', async () => {
+    await service.updateStatus('u1', 'active')
+    expect(userRepo.update).toHaveBeenCalledWith('u1', { status: 'active', failedLoginAttempts: 0 })
   })
 
   it('soft-deletes when status becomes deleted', async () => {

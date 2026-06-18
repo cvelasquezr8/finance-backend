@@ -3,6 +3,7 @@ import { UserEntity } from '../../src/domain/entities/user.entity'
 
 const user: UserEntity = {
   id: 'u1',
+  numericId: 1,
   email: 'ana@example.com',
   passwordHash: 'SECRET_HASH',
   firstName: 'Ana',
@@ -19,6 +20,7 @@ const user: UserEntity = {
   monthlyNotifications: true,
   role: 'USER',
   status: 'active',
+  failedLoginAttempts: 0,
   mustChangePassword: true,
   invitedBy: null,
   invitedAt: null,

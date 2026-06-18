@@ -46,19 +46,26 @@ async function bootstrap() {
     })
   )
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Finance Backend API')
-    .setDescription('Personal finance application API')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build()
+  // Swagger is only exposed in development. In production (or any other mode)
+  // the docs endpoint is never mounted.
+  const isDevelopment = process.env.NODE_ENV === 'development'
+  if (isDevelopment) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('Finance Backend API')
+      .setDescription('Personal finance application API')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build()
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig)
-  SwaggerModule.setup(`${prefix}/docs`, app, document)
+    const document = SwaggerModule.createDocument(app, swaggerConfig)
+    SwaggerModule.setup(`${prefix}/docs`, app, document)
+  }
 
   await app.listen(port)
   logger.log(`Application running on http://localhost:${port}/${prefix}`)
-  logger.log(`Swagger docs at http://localhost:${port}/${prefix}/docs`)
+  if (isDevelopment) {
+    logger.log(`Swagger docs at http://localhost:${port}/${prefix}/docs`)
+  }
 }
 
 void bootstrap()

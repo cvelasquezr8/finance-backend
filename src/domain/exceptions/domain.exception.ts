@@ -36,3 +36,27 @@ export class DuplicateEntityException extends DomainException {
     super(`${entity} with this ${field} already exists`, 'DUPLICATE_ENTITY')
   }
 }
+
+/**
+ * Thrown on a failed login when the account is still active. Carries how many
+ * attempts remain before the account is blocked so the client can warn the user.
+ */
+export class InvalidCredentialsException extends DomainException {
+  constructor(public readonly remaining: number) {
+    super('Invalid credentials', 'INVALID_CREDENTIALS')
+  }
+}
+
+/** Thrown when login is attempted against an account blocked by too many failures. */
+export class AccountLockedException extends DomainException {
+  constructor() {
+    super('Account locked due to too many failed login attempts', 'ACCOUNT_LOCKED')
+  }
+}
+
+/** Thrown when login is attempted against a newly registered account awaiting admin approval. */
+export class AccountPendingException extends DomainException {
+  constructor() {
+    super('Account pending admin approval', 'ACCOUNT_PENDING')
+  }
+}

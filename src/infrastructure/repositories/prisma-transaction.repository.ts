@@ -15,7 +15,10 @@ export class PrismaTransactionRepository extends TransactionRepository {
   }
 
   async findById(id: string): Promise<TransactionEntity | null> {
-    const tx = await this.prisma.transaction.findFirst({ where: { id, deletedAt: null } })
+    const tx = await this.prisma.transaction.findFirst({
+      where: { id, deletedAt: null },
+      include: { category: true },
+    })
     return tx ? PrismaTransactionRepository.toEntity(tx) : null
   }
 
@@ -32,12 +35,13 @@ export class PrismaTransactionRepository extends TransactionRepository {
           quincena: filter.quincena,
         }),
       ...(filter.type && { type: filter.type as any }),
-      ...(filter.category && { category: filter.category as any }),
+      ...(filter.category && { category: { code: filter.category } }),
       ...(filter.cardId && { cardId: filter.cardId }),
       ...(filter.isCC !== undefined && { isCC: filter.isCC }),
     }
     const txs = await this.prisma.transaction.findMany({
       where,
+      include: { category: true },
       orderBy: [{ dueDay: 'asc' }, { createdAt: 'desc' }],
     })
     return txs.map(PrismaTransactionRepository.toEntity)
@@ -46,6 +50,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
   async findByEventId(eventId: string): Promise<TransactionEntity[]> {
     const txs = await this.prisma.transaction.findMany({
       where: { eventId, deletedAt: null },
+      include: { category: true },
       orderBy: [{ year: 'desc' }, { month: 'desc' }, { dueDay: 'desc' }],
     })
     return txs.map(PrismaTransactionRepository.toEntity)
@@ -63,20 +68,22 @@ export class PrismaTransactionRepository extends TransactionRepository {
       deletedAt: null,
       OR: [{ eventId: null }, { event: { status: { not: 'COMPLETED' } } }],
       ...(type && type !== 'all' && { type: type as any }),
-      ...(category && category !== 'all' && { category: category as any }),
+      ...(category && category !== 'all' && { category: { code: category } }),
     }
     const txs = await this.prisma.transaction.findMany({
       where,
+      include: { category: true },
       orderBy: [{ month: 'desc' }, { dueDay: 'desc' }],
     })
     return txs.map(PrismaTransactionRepository.toEntity)
   }
 
   async create(
-    data: Omit<TransactionEntity, 'id' | 'createdAt' | 'updatedAt'>
+    data: Omit<TransactionEntity, 'id' | 'numericId' | 'categoryCode' | 'createdAt' | 'updatedAt'>
   ): Promise<TransactionEntity> {
     const tx = await this.prisma.transaction.create({
       data: { ...data, amount: new Prisma.Decimal(data.amount) } as any,
+      include: { category: true },
     })
     return PrismaTransactionRepository.toEntity(tx)
   }
@@ -84,7 +91,11 @@ export class PrismaTransactionRepository extends TransactionRepository {
   async update(id: string, data: Partial<TransactionEntity>): Promise<TransactionEntity> {
     const updateData: any = { ...data }
     if (data.amount !== undefined) updateData.amount = new Prisma.Decimal(data.amount)
-    const tx = await this.prisma.transaction.update({ where: { id }, data: updateData })
+    const tx = await this.prisma.transaction.update({
+      where: { id },
+      data: updateData,
+      include: { category: true },
+    })
     return PrismaTransactionRepository.toEntity(tx)
   }
 
@@ -95,6 +106,7 @@ export class PrismaTransactionRepository extends TransactionRepository {
     const updated = await this.prisma.transaction.update({
       where: { id },
       data: { deletedAt: now, deletedLocalTimeAt: localTime ?? now, updatedAt: now },
+      include: { category: true },
     })
     return PrismaTransactionRepository.toEntity(updated)
   }
@@ -125,14 +137,29 @@ export class PrismaTransactionRepository extends TransactionRepository {
     return sums
   }
 
+  async findCategoryIdByCode(code: string): Promise<number | null> {
+    const cat = await this.prisma.transactionCategory.findUnique({ where: { code } })
+    return cat?.id ?? null
+  }
+
+  async listCategories(): Promise<{ id: number; code: string; nameEs: string; nameEn: string }[]> {
+    return this.prisma.transactionCategory.findMany({
+      where: { isActive: true },
+      select: { id: true, code: true, nameEs: true, nameEn: true },
+      orderBy: { id: 'asc' },
+    })
+  }
+
   private static toEntity(tx: any): TransactionEntity {
     return {
       id: tx.id,
+      numericId: tx.numericId,
       userId: tx.userId,
       description: tx.description,
       amount: Number(tx.amount),
       type: tx.type,
-      category: tx.category,
+      categoryId: tx.categoryId,
+      categoryCode: tx.category?.code ?? '',
       status: tx.status,
       quincena: tx.quincena,
       dueDay: tx.dueDay,

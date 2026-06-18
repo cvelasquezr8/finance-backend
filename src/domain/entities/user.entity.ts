@@ -3,6 +3,7 @@ export type UserStatus = 'active' | 'blocked' | 'deleted'
 
 export interface UserEntity {
   id: string
+  numericId: number
   email: string
   passwordHash: string
   firstName: string
@@ -19,6 +20,7 @@ export interface UserEntity {
   monthlyNotifications: boolean
   role: UserRole
   status: UserStatus
+  failedLoginAttempts: number
   mustChangePassword: boolean
   invitedBy?: string | null
   invitedAt?: Date | null

@@ -31,10 +31,11 @@ export class RegisterDto {
   @MinLength(6, { message: 'Mínimo 6 caracteres' })
   password: string
 
-  @ApiProperty({ example: '@carlos_v' })
+  @ApiProperty({ example: 'carlos_v' })
   @IsString()
-  @Matches(/^@[a-z0-9_]{2,20}$/, {
-    message: 'El alias debe seguir el formato @alias (2-20 caracteres)',
+  @Matches(/^[a-z0-9_]{2,20}$/, {
+    message:
+      'El alias debe tener entre 2 y 20 caracteres en minúsculas (letras, números, guión bajo)',
   })
   alias: string
 
@@ -42,4 +43,19 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   phone?: string
+
+  @ApiPropertyOptional({ example: 'es' })
+  @IsOptional()
+  @IsString()
+  language?: string
+
+  @ApiPropertyOptional({ example: 'America/Mexico_City' })
+  @IsOptional()
+  @IsString()
+  timezone?: string
+
+  @ApiPropertyOptional({ example: 'MXN' })
+  @IsOptional()
+  @IsString()
+  currency?: string
 }

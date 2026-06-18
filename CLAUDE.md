@@ -34,6 +34,14 @@
 - Refresh token is persisted in `refresh_tokens` and revoked on logout
 - Passwords: Argon2 (never bcrypt, never MD5)
 - A `blocked` or `deleted` user cannot authenticate even with a valid token
+- **Failed-login lockout:** `User.failedLoginAttempts` counts consecutive wrong
+  passwords. On the **3rd** failure the account is auto-set to `status: 'blocked'`
+  and an `account.blocked` notification (`reason: 'failed_login'`) is emitted.
+  Each failed attempt before the block returns `401 INVALID_CREDENTIALS` with the
+  remaining attempt count; the block returns `401 ACCOUNT_LOCKED`.
+- A successful login resets `failedLoginAttempts` to 0.
+- **Unlock is admin-only:** reactivating a user (`status: 'active'`) also resets
+  `failedLoginAttempts` to 0. There is no automatic time-based unlock.
 
 ### 1.5 RBAC
 
@@ -235,6 +243,8 @@ See `.env.example` for the full list. The most critical:
 - `JWT_ACCESS_SECRET`: Must be a random 64+ character string in production
 - `JWT_REFRESH_SECRET`: Different from the access secret
 - `CORS_ORIGINS`: Comma-separated list of allowed origins
+- `NODE_ENV`: Swagger docs (`/{prefix}/docs`) are mounted **only** when
+  `NODE_ENV=development`. In production or any other value the endpoint is absent.
 
 ---
 

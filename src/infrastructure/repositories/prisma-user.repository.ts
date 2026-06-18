@@ -30,7 +30,9 @@ export class PrismaUserRepository extends UserRepository {
     return users.map(PrismaUserRepository.toEntity)
   }
 
-  async create(data: Omit<UserEntity, 'id' | 'createdAt' | 'updatedAt'>): Promise<UserEntity> {
+  async create(
+    data: Omit<UserEntity, 'id' | 'numericId' | 'createdAt' | 'updatedAt' | 'failedLoginAttempts'>
+  ): Promise<UserEntity> {
     const user = await this.prisma.user.create({ data: data as any })
     return PrismaUserRepository.toEntity(user)
   }
@@ -62,6 +64,7 @@ export class PrismaUserRepository extends UserRepository {
   private static toEntity(user: any): UserEntity {
     return {
       id: user.id,
+      numericId: user.numericId,
       email: user.email,
       passwordHash: user.passwordHash,
       firstName: user.firstName,
@@ -78,6 +81,7 @@ export class PrismaUserRepository extends UserRepository {
       monthlyNotifications: user.monthlyNotifications,
       role: user.role,
       status: user.status,
+      failedLoginAttempts: user.failedLoginAttempts,
       mustChangePassword: user.mustChangePassword,
       invitedBy: user.invitedBy,
       invitedAt: user.invitedAt,

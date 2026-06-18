@@ -7,6 +7,7 @@ import { UserEntity } from '@domain/entities/user.entity'
 export function toUserDto(user: UserEntity) {
   return {
     id: user.id,
+    numericId: user.numericId,
     email: user.email,
     name: `${user.firstName} ${user.lastName}`,
     firstName: user.firstName,

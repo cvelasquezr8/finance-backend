@@ -34,7 +34,13 @@ export class I18nService {
   }
 
   private loadLocales() {
-    const dir = path.resolve(__dirname, 'locales')
+    const candidates = [
+      path.resolve(__dirname, 'locales'),
+      path.resolve(process.cwd(), 'src', 'shared', 'i18n', 'locales'),
+    ]
+    const dir = candidates.find((d) => fs.existsSync(d))
+    if (!dir) return
+
     const langs: SupportedLang[] = ['en', 'es']
     for (const lang of langs) {
       const file = path.join(dir, `${lang}.json`)

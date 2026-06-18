@@ -22,7 +22,7 @@ export abstract class TransactionRepository {
     category?: string
   ): Promise<TransactionEntity[]>
   abstract create(
-    data: Omit<TransactionEntity, 'id' | 'createdAt' | 'updatedAt'>
+    data: Omit<TransactionEntity, 'id' | 'numericId' | 'categoryCode' | 'createdAt' | 'updatedAt'>
   ): Promise<TransactionEntity>
   abstract update(id: string, data: Partial<TransactionEntity>): Promise<TransactionEntity>
   abstract softDelete(id: string, localTime?: Date): Promise<TransactionEntity>
@@ -32,4 +32,6 @@ export abstract class TransactionRepository {
     year: number,
     quincena: string
   ): Promise<Record<string, number>>
+  abstract findCategoryIdByCode(code: string): Promise<number | null>
+  abstract listCategories(): Promise<{ id: number; code: string; nameEs: string; nameEn: string }[]>
 }

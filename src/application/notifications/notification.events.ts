@@ -30,6 +30,8 @@ export interface AccountInvitedEvent {
 
 export interface AccountBlockedEvent {
   recipientUserId: string
+  /** Why the account was blocked. Defaults to admin action when omitted. */
+  reason?: 'admin' | 'failed_login'
 }
 
 export interface EventClosedEvent {

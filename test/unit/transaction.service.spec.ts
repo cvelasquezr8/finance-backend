@@ -6,11 +6,13 @@ import { NotFoundException, ForbiddenException } from '@nestjs/common'
 
 const mockTx: TransactionEntity = {
   id: 'tx-1',
+  numericId: 1,
   userId: 'user-1',
   description: 'Café',
   amount: 50,
   type: 'daily',
-  category: 'alimentacion',
+  categoryId: 1,
+  categoryCode: 'alimentacion',
   status: 'confirmed',
   quincena: 'primera',
   dueDay: 7,
@@ -38,6 +40,8 @@ const mockRepo: Partial<TransactionRepository> = {
   softDelete: jest.fn().mockResolvedValue(mockTx),
   findHistory: jest.fn().mockResolvedValue([mockTx]),
   sumByType: jest.fn().mockResolvedValue({}),
+  findCategoryIdByCode: jest.fn().mockResolvedValue(1),
+  listCategories: jest.fn().mockResolvedValue([]),
 }
 
 describe('TransactionService', () => {
@@ -65,7 +69,7 @@ describe('TransactionService', () => {
         description: 'Café',
         amount: 50,
         type: 'daily' as const,
-        category: 'alimentacion' as const,
+        category: 'alimentacion',
         quincena: 'primera' as const,
         dueDay: 7,
         month: 5,

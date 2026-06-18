@@ -36,9 +36,15 @@ export class AdminService {
       const deleted = await this.userRepo.softDelete(userId)
       return AdminService.toDto(deleted)
     }
-    const updated = await this.userRepo.update(userId, { status })
+    // Reactivating clears any failed-login streak so the user isn't re-blocked
+    // on their first mistake after an admin unlocks them.
+    const data = status === 'active' ? { status, failedLoginAttempts: 0 } : { status }
+    const updated = await this.userRepo.update(userId, data)
     if (status === 'blocked') {
-      this.emitter.emit(NOTIFICATION_EVENTS.accountBlocked, { recipientUserId: userId })
+      this.emitter.emit(NOTIFICATION_EVENTS.accountBlocked, {
+        recipientUserId: userId,
+        reason: 'admin',
+      })
     }
     return AdminService.toDto(updated)
   }

@@ -8,6 +8,9 @@
     "VALIDATION": "Error de validación: {{details}}",
     "INTERNAL_SERVER_ERROR": "Ocurrió un error inesperado. Por favor intenta más tarde.",
     "INVALID_CREDENTIALS": "Correo o contraseña incorrectos.",
+    "INVALID_CREDENTIALS_ATTEMPTS": "Credenciales inválidas. Te quedan {{remaining}} intento(s) antes de que tu cuenta sea bloqueada.",
+    "ACCOUNT_LOCKED": "Tu cuenta ha sido bloqueada por demasiados intentos de inicio de sesión fallidos. Contacta a un administrador.",
+    "ACCOUNT_PENDING": "Tu cuenta está pendiente de aprobación. Un administrador debe autorizar tu acceso al sistema.",
     "INACTIVE_ACCOUNT": "Tu cuenta está inactiva o bloqueada.",
     "INVALID_TOKEN": "Token inválido o expirado.",
     "RATE_LIMIT": "Demasiadas solicitudes. Por favor espera antes de intentar nuevamente.",
@@ -17,7 +20,7 @@
   "validation": {
     "email_invalid": "Por favor ingresa un correo electrónico válido.",
     "password_min": "La contraseña debe tener al menos 6 caracteres.",
-    "alias_format": "El alias debe seguir el formato @alias (2-20 caracteres en minúsculas).",
+    "alias_format": "El alias debe tener entre 2 y 20 caracteres en minúsculas (letras, números, guión bajo).",
     "min_chars": "Debe tener al menos {{min}} caracteres.",
     "positive_number": "Debe ser un número positivo.",
     "last_four_digits": "Deben ser exactamente 4 dígitos.",

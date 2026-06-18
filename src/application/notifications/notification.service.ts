@@ -155,13 +155,19 @@ export class NotificationService {
   @OnEvent(NOTIFICATION_EVENTS.accountBlocked)
   async onAccountBlocked(e: AccountBlockedEvent) {
     const en = (await this.langOf(e.recipientUserId)) === 'en'
+    const byFailedLogin = e.reason === 'failed_login'
+    const message = byFailedLogin
+      ? en
+        ? 'Your account has been blocked due to too many failed login attempts.'
+        : 'Tu cuenta fue bloqueada por demasiados intentos de inicio de sesión fallidos.'
+      : en
+        ? 'Your account has been blocked by an administrator.'
+        : 'Un administrador bloqueó tu cuenta.'
     await this.createForUser(
       e.recipientUserId,
       'account_blocked',
       en ? 'Account blocked' : 'Cuenta bloqueada',
-      en
-        ? 'Your account has been blocked by an administrator.'
-        : 'Un administrador bloqueó tu cuenta.',
+      message,
       null
     )
   }

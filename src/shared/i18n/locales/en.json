@@ -8,6 +8,9 @@
     "VALIDATION": "Validation failed: {{details}}",
     "INTERNAL_SERVER_ERROR": "An unexpected error occurred. Please try again later.",
     "INVALID_CREDENTIALS": "Invalid email or password.",
+    "INVALID_CREDENTIALS_ATTEMPTS": "Invalid credentials. You have {{remaining}} attempt(s) left before your account is blocked.",
+    "ACCOUNT_LOCKED": "Your account has been blocked due to too many failed login attempts. Please contact an administrator.",
+    "ACCOUNT_PENDING": "Your account is pending approval. An administrator must authorize your access to the system.",
     "INACTIVE_ACCOUNT": "Your account is inactive or blocked.",
     "INVALID_TOKEN": "Invalid or expired token.",
     "RATE_LIMIT": "Too many requests. Please wait before trying again.",
@@ -17,7 +20,7 @@
   "validation": {
     "email_invalid": "Please enter a valid email address.",
     "password_min": "Password must be at least 6 characters long.",
-    "alias_format": "Alias must follow the @alias format (2-20 lowercase characters).",
+    "alias_format": "Alias must be between 2 and 20 lowercase characters (letters, numbers, underscore).",
     "min_chars": "Must be at least {{min}} characters.",
     "positive_number": "Must be a positive number.",
     "last_four_digits": "Must be exactly 4 digits.",
